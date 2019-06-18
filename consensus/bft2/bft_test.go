@@ -2,7 +2,7 @@ package bft2
 
 import (
 	"fmt"
-	"github.com/constant-money/constant-chain/wire"
+	"github.com/incognitochain/incognito-chain/wire"
 	"github.com/incognitochain/incognito-chain/common"
 	"strconv"
 	"sync"
