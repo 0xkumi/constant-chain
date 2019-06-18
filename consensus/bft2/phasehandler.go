@@ -4,7 +4,7 @@ import "fmt"
 
 // create new block (sequence number)
 func (e *BFTEngine) handleProposePhase() {
-	if !e.viewIsInTimeFrame() || e.State == PROPOSE {
+	if !e.isInTimeFrame() || e.State == PROPOSE {
 		return //not in right time frame or already in propose phase
 	}
 	e.setState(PROPOSE)
@@ -20,7 +20,7 @@ func (e *BFTEngine) handleProposePhase() {
 
 //listen for block
 func (e *BFTEngine) handleListenPhase() {
-	if !e.viewIsInTimeFrame() ||e.State == LISTEN {
+	if !e.isInTimeFrame() || e.State == LISTEN {
 		return //not in right time frame or already in listen phase
 	}
 	e.setState(LISTEN)
@@ -30,7 +30,7 @@ func (e *BFTEngine) handleListenPhase() {
 //send prepare message (signature of that message & sequence number) and wait for > 2/3 signature of nodes
 //block for the message and sequence number
 func (e *BFTEngine) handlePreparePhase() {
-	if !e.viewIsInTimeFrame() ||  e.State == PREPARE {
+	if !e.isInTimeFrame() ||  e.State == PREPARE {
 		return //not in right time frame or already in prepare phase
 	}
 	e.setState(PREPARE)
@@ -41,7 +41,7 @@ func (e *BFTEngine) handlePreparePhase() {
 //broadcast handleCommitPhase for a block
 //for those who dont know which state it is/or he de-sync from network, 2/3 handleCommitPhase message will show him
 func (e *BFTEngine) handleCommitPhase() {
-	if !e.viewIsInTimeFrame() || e.State == COMMIT {
+	if !e.isInTimeFrame() || e.State == COMMIT {
 		return //not in right time frame or already in commit phase
 	}
 	e.setState(COMMIT)
@@ -67,7 +67,7 @@ func (e *BFTEngine) handleNewRoundPhase() {
 	}
 
 	//if already running a round for current timeframe
-	if e.viewIsInTimeFrame() && e.State != NEWROUND {
+	if e.isInTimeFrame() && e.State != NEWROUND {
 		return
 	}
 	

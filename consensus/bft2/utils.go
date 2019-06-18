@@ -29,7 +29,7 @@ func (e *BFTEngine) getCurrentRound() uint64 {
 	return uint64(e.getTimeSinceLastBlock().Seconds() / TIMEOUT.Seconds())
 }
 
-func (e *BFTEngine) viewIsInTimeFrame() bool {
+func (e *BFTEngine) isInTimeFrame() bool {
 	if e.Chain.GetHeight()+1 != e.NextHeight {
 		return false
 	}

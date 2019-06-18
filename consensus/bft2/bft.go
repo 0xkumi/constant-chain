@@ -127,7 +127,7 @@ func (e *BFTEngine) Start() {
 			
 			case <-ticker:
 				if e.Chain.IsReady() {
-					if !e.viewIsInTimeFrame() {
+					if !e.isInTimeFrame() {
 						e.nextState(NEWROUND)
 					}
 				}

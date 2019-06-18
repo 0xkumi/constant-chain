@@ -65,7 +65,7 @@ func (s *Chain) PushMessageToValidator(m wire.Message) error {
 				continue
 			}
 			go func(node *BFTEngine){
-				rand := common.RandInt() % 30000
+				rand := common.RandInt() % 10000
 				time.Sleep(time.Duration(rand)*time.Millisecond)
 				node.ProposeMsgCh <- *m.(*ProposeMsg)
 			}(node)
@@ -173,7 +173,7 @@ func (s *Chain) InsertBlk(blk interface{}, willCommit bool) {
 	//fmt.Println(s.Block)
 }
 
-var NODE_NUM = 100
+var NODE_NUM = 6
 var testFramework = TestFrameWork{nodeList: make([]*BFTEngine, NODE_NUM)}
 
 func TestBFTEngine_Start(t *testing.T) {
