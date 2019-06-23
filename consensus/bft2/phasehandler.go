@@ -38,30 +38,9 @@ func (e *BFTEngine) handlePreparePhase() {
 	go e.Chain.PushMessageToValidator(&PrepareMsg{true, e.Chain.GetNodePubKey(), "signature", e.Block.Hash(),fmt.Sprint(e.NextHeight,"_",e.Round) })
 }
 
-//broadcast handleCommitPhase for a block
-//for those who dont know which state it is/or he de-sync from network, 2/3 handleCommitPhase message will show him
-func (e *BFTEngine) handleCommitPhase() {
-	if !e.isInTimeFrame() || e.State == COMMIT {
-		return //not in right time frame or already in commit phase
-	}
-	e.setState(COMMIT)
-
-	//There are replicas (non-faulty or otherwise) that didn't receive enough (i.e. 2f+1) PREPARE messages, either due to lossy network or being offline for a while. For them, they can't reach PREPARED stage. But! But when they heard from 2f+1 replicas broadcasting COMMIT message, they could be certain to handleCommitPhase on (m,v,n,i)
-	isValid := true
-	if e.getMajorityVote(e.PrepareMsgs[e.Block.Hash()]) == -1{
-		isValid = false
-	}
-	
-	if isValid {
-		go e.Chain.PushMessageToValidator(&CommitMsg{true, e.Chain.GetNodePubKey(), "signature", e.Block.Hash() ,fmt.Sprint(e.NextHeight,"_",e.Round)})
-	} else {
-		go e.Chain.PushMessageToValidator(&CommitMsg{false, e.Chain.GetNodePubKey(), "signature", e.Block.Hash(),fmt.Sprint(e.NextHeight,"_",e.Round) })
-	}
-
-}
 
 func (e *BFTEngine) handleNewRoundPhase() {
-	//if chain is not ready
+	//if chain is not ready, return
 	if !e.Chain.IsReady() {
 		return
 	}

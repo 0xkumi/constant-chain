@@ -14,7 +14,6 @@ const (
 	PROPOSE  = "PROPOSE"
 	LISTEN   = "LISTEN"
 	PREPARE  = "PREPARE"
-	COMMIT   = "COMMIT"
 	NEWROUND = "NEWROUND"
 )
 
@@ -66,48 +65,35 @@ type PrepareMsg struct {
 	RoundKey string
 }
 
-type CommitMsg struct {
-	WillCommit bool
-	From string
-	Sig string
-	BlkHash string
-	RoundKey string
-}
 
 type BFTEngine struct {
 	Chain  ChainInterface
 	PeerID string
 	Round      uint64
 	NextHeight uint64
+	
 	State        string
 	Block        BlockInterface
-	NextStateCh  chan string
+	
 	ProposeMsgCh chan ProposeMsg
 	PrepareMsgCh chan PrepareMsg
-	CommitMsgCh  chan CommitMsg
 	
 	PrepareMsgs  map[string]map[string]bool
-	CommitMsgs  map[string]map[string]bool
 	Blocks map[string]BlockInterface
 }
 
 func (e *BFTEngine) Start() {
 	e.PrepareMsgs = map[string]map[string]bool{}
-	e.CommitMsgs = map[string]map[string]bool{}
 	e.Blocks = map[string]BlockInterface{}
 	
 	e.ProposeMsgCh = make(chan ProposeMsg)
 	e.PrepareMsgCh = make(chan PrepareMsg)
-	e.CommitMsgCh = make(chan CommitMsg)
-	e.NextStateCh = make(chan string)
 
 	ticker := time.Tick(100 * time.Millisecond)
 	
 	go func() {
 		for { //action react pattern
 			select {
-			case s := <-e.NextStateCh:
-				e.nextState(s)
 			case b := <-e.ProposeMsgCh:
 				e.Blocks[b.RoundKey] = b.Block
 			case sig := <-e.PrepareMsgCh:
@@ -117,20 +103,16 @@ func (e *BFTEngine) Start() {
 					}
 					e.PrepareMsgs[sig.RoundKey][sig.From] = sig.IsOk
 				}
-			case commit := <-e.CommitMsgCh:
-				if e.CommitMsgs[commit.RoundKey] == nil {
-					e.CommitMsgs[commit.RoundKey] = map[string]bool{}
-				}
-				e.CommitMsgs[commit.RoundKey][commit.From] = commit.WillCommit
-				
-				//fmt.Println(e.PeerID, " get commit ",commit.RoundKey,commit.From,commit.WillCommit)
-			
 			case <-ticker:
 				if e.Chain.IsReady() {
 					if !e.isInTimeFrame() {
 						e.nextState(NEWROUND)
 					}
+				} else {
+					//if not ready, stay in new round phase
+					e.nextState(NEWROUND)
 				}
+				
 				switch e.State {
 				case LISTEN:
 					roundKey := fmt.Sprint(e.NextHeight, "_", e.Round)
@@ -140,16 +122,11 @@ func (e *BFTEngine) Start() {
 					}
 				case PREPARE:
 					roundKey := fmt.Sprint(e.NextHeight, "_", e.Round)
-					if e.Block != nil && e.getMajorityVote(e.PrepareMsgs[roundKey]) != 0 {
-						e.nextState(COMMIT)
-					}
-				case COMMIT:
-					roundKey := fmt.Sprint(e.NextHeight, "_", e.Round)
-					if e.Block != nil && e.getMajorityVote(e.CommitMsgs[roundKey]) == 1 {
+					if e.Block != nil && e.getMajorityVote(e.PrepareMsgs[roundKey]) == 1 {
 						e.Chain.InsertBlk(e.Block, true)
 						e.nextState(NEWROUND)
 					}
-					if e.Block != nil && e.getMajorityVote(e.CommitMsgs[roundKey]) == -1 {
+					if e.Block != nil && e.getMajorityVote(e.PrepareMsgs[roundKey]) == -1 {
 						e.Chain.InsertBlk(e.Block, false)
 						e.nextState(NEWROUND)
 					}
@@ -168,8 +145,6 @@ func (e *BFTEngine) nextState(nextState string) {
 		e.handleListenPhase()
 	case PREPARE:
 		e.handlePreparePhase()
-	case COMMIT:
-		e.handleCommitPhase()
 	case NEWROUND:
 		e.handleNewRoundPhase()
 	}

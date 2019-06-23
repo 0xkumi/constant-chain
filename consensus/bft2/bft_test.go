@@ -65,7 +65,7 @@ func (s *Chain) PushMessageToValidator(m wire.Message) error {
 				continue
 			}
 			go func(node *BFTEngine){
-				rand := common.RandInt() % 10000
+				rand := common.RandInt() % 1000
 				time.Sleep(time.Duration(rand)*time.Millisecond)
 				node.ProposeMsgCh <- *m.(*ProposeMsg)
 			}(node)
@@ -75,20 +75,12 @@ func (s *Chain) PushMessageToValidator(m wire.Message) error {
 				continue
 			}
 			go func(node *BFTEngine){
-				rand := common.RandInt() % 6000
+				rand := common.RandInt() % 500
 				time.Sleep(time.Duration(rand)*time.Millisecond)
 				node.PrepareMsgCh <- *m.(*PrepareMsg)
 			}(node)
 			
-		case *CommitMsg:
-			if node.Chain.GetNodePubKey() == s.GetNodePubKey(){
-				continue
-			}
-			go func(node *BFTEngine){
-				rand := common.RandInt() % 6000
-				time.Sleep(time.Duration(rand)*time.Millisecond)
-				node.CommitMsgCh <- *m.(*CommitMsg)
-			}(node)
+		
 			
 		default:
 			fmt.Printf("I don't know about type %T!\n", v)
@@ -102,7 +94,7 @@ func (s *Chain) GetLastBlockTimeStamp() uint64 {
 }
 
 func (s *Chain) GetBlkMinTime() time.Duration {
-	return time.Second * 5
+	return time.Second * 1
 }
 
 func (s *Chain) IsReady() bool {
@@ -173,7 +165,7 @@ func (s *Chain) InsertBlk(blk interface{}, willCommit bool) {
 	//fmt.Println(s.Block)
 }
 
-var NODE_NUM = 6
+var NODE_NUM = 10
 var testFramework = TestFrameWork{nodeList: make([]*BFTEngine, NODE_NUM)}
 
 func TestBFTEngine_Start(t *testing.T) {
